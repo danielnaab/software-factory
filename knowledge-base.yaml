@@ -1,0 +1,40 @@
+apiVersion: kb/v1
+name: software-factory
+description: "Reusable patterns for evolving agent-authored codebases"
+
+entrypoints:
+  human: README.md
+  agent: AGENTS.md
+
+meta:
+  entrypoint: ".graft/meta-knowledge-base/AGENTS.md"
+
+imports:
+  - kind: local
+    path: .graft/meta-knowledge-base
+    entrypoint: knowledge-base.yaml
+  - kind: local
+    path: .graft/living-specifications
+    entrypoint: knowledge-base.yaml
+
+paths:
+  docs: docs
+  notes: notes
+
+sources:
+  canonical:
+    - path: docs/**
+      note: "Software factory patterns and protocols are canonical"
+
+  tracking:
+    - path: notes/**
+      note: "Time-bounded exploration and session logs"
+
+rules:
+  lifecycle:
+    statuses: ["draft", "working", "stable", "deprecated"]
+  provenance:
+    requiredFor: ["pattern-definitions", "protocol-specifications"]
+  writes:
+    allow: ["docs/**", "notes/**"]
+    deny: ["secrets/**", "credentials/**", ".graft/**"]

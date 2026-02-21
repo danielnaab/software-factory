@@ -1,0 +1,12 @@
+apiVersion: graft/v0
+dependencies:
+  living-specifications:
+    source: https://github.com/danielnaab/living-specifications.git
+    ref: main
+    commit: 2171e414a012852e389a895f25f8869af7cd91b1
+    consumed_at: 2026-02-21T03:33:05Z
+  meta-knowledge-base:
+    source: https://github.com/danielnaab/meta-knowledge-base.git
+    ref: main
+    commit: dd6ac969a5eccfbec5d498d716764c8c9f2be056
+    consumed_at: 2026-02-21T03:33:05Z

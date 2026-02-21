@@ -1,0 +1,6 @@
+[submodule ".graft/meta-knowledge-base"]
+	path = .graft/meta-knowledge-base
+	url = https://github.com/danielnaab/meta-knowledge-base.git
+[submodule ".graft/living-specifications"]
+	path = .graft/living-specifications
+	url = https://github.com/danielnaab/living-specifications.git
