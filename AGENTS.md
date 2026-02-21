@@ -9,7 +9,8 @@ You are working in the **software-factory knowledge base** -- a repository defin
 | `knowledge-base.yaml` | KB structure declaration |
 | `README.md` | Human entrypoint |
 | `AGENTS.md` | Agent entrypoint (this file) |
-| `docs/` | Pattern documentation (not yet populated) |
+| `docs/` | Pattern documentation and [specifications](docs/specifications/) |
+| `templates/` | Prompt templates consumed by graft commands ([spec](docs/specifications/prompt-templates.md)) |
 | `notes/` | Time-bounded exploration notes |
 | `.graft/` | Dependencies managed via `graft resolve` |
 
@@ -34,6 +35,7 @@ Follow the [agent workflow pattern](.graft/meta-knowledge-base/docs/playbooks/ag
 
 You may write to:
 - `docs/**` -- pattern documentation
+- `templates/**` -- prompt templates
 - `notes/**` -- session logs and explorations
 
 Never write to:
@@ -42,6 +44,7 @@ Never write to:
 
 ## Navigation
 
-- Patterns: `docs/` (not yet populated)
+- Patterns and specs: `docs/`
+- Templates: `templates/`
 - Notes: [notes/](notes/)
 - Dependencies: [meta-knowledge-base](.graft/meta-knowledge-base/), [living-specifications](.graft/living-specifications/)

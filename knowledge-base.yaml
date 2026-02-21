@@ -25,6 +25,8 @@ sources:
   canonical:
     - path: docs/**
       note: "Software factory patterns and protocols are canonical"
+    - path: templates/**
+      note: "Prompt templates consumed by graft commands"
 
   tracking:
     - path: notes/**
@@ -36,5 +38,5 @@ rules:
   provenance:
     requiredFor: ["pattern-definitions", "protocol-specifications"]
   writes:
-    allow: ["docs/**", "notes/**"]
+    allow: ["docs/**", "notes/**", "templates/**"]
     deny: ["secrets/**", "credentials/**", ".graft/**"]
