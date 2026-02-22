@@ -1,6 +1,6 @@
 ---
 status: draft
-last-verified: 2026-02-21
+last-verified: 2026-02-22
 ---
 
 # Prompt Templates
@@ -36,12 +36,23 @@ Then the guarded section is omitted
 And the template renders without error
 ```
 
+### Task Injection
+
+```gherkin
+Given a command invoked with positional arguments
+When the template contains {{ args }}
+Then the arguments are joined with spaces and injected as a string
+And templates guard with {% if args is defined %} for optional tasks
+```
+
 ### State Query Contract
 
 ```gherkin
 Given a state query defined in graft.yaml
 When the query executes
-Then it produces a valid JSON object on stdout
+Then it produces a valid JSON object with named fields on stdout
+And templates access individual fields via {{ state.<name>.<field> }}
+Or serialize the whole object via {{ state.<name> | json_encode() }}
 ```
 
 ### Edge Cases
@@ -56,20 +67,21 @@ Then it produces a valid JSON object on stdout
 - Templates must not reference absolute paths or project-specific files
 - Templates must reference AGENTS.md by name only (not by content)
 - All state access must be `{% if %}` guarded
-- State queries must produce JSON objects (not arrays or primitives)
+- State queries must produce JSON objects with named fields (not arrays, primitives, or `{raw: .}` wrapping)
 - Template paths must be relative
 
 ## Open Questions
 
-- [ ] State query JSON structure: `{raw: .}` wrapping vs structured fields -- currently consumers decide
-- [ ] Template versioning mechanism for pinning across consumer updates
-- [ ] Task injection: templates have no way to receive user-provided task descriptions; CLI args pass to `run:` command, not template context. Needs engine support for `{{ args }}` or similar. See [session note](../../../../notes/2026-02-21-plan-template-implementation.md).
+All resolved -- see Decisions below.
 
 ## Decisions
 
 - 2026-02-21: Output-schema focused templates -- templates inject state and define output format; skip generic instructions that duplicate agent capabilities
 - 2026-02-21: Story + slices plan format -- plan output is a story-level frame with independently-testable vertical slices
 - 2026-02-21: Spec ships with implementation -- specs that ship separately from code rot (per BDD evidence)
+- 2026-02-22: Task injection via `{{ args }}` -- CLI positional args joined with spaces, guarded with `{% if args is defined %}` (ADR 008)
+- 2026-02-22: Structured JSON state queries -- named fields instead of `{raw: .}` wrapping; templates access subfields or render whole object
+- 2026-02-22: Dependency-level pinning -- `graft.lock` pins dependency versions; no per-template versioning needed
 
 ## Sources
 

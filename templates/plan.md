@@ -1,16 +1,33 @@
 Read AGENTS.md for project conventions, verification commands, and write boundaries.
 Explore the codebase to understand relevant files and existing patterns before planning.
 
+{% if args is defined %}
+## Task
+
+{{ args }}
+{% endif %}
+
 {% if state.verify is defined %}
 ## Verification Status
 
-{{ state.verify.raw }}
+### Format
+{{ state.verify.format }}
+
+### Lint
+{{ state.verify.lint }}
+
+### Tests
+{{ state.verify.tests }}
 {% endif %}
 
 {% if state.changes is defined %}
 ## Recent Changes
 
-{{ state.changes.raw }}
+### Commits
+{{ state.changes.commits }}
+
+### Working Tree
+{{ state.changes.diff }}
 {% endif %}
 
 ## Plan Format
