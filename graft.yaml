@@ -2,3 +2,48 @@ apiVersion: graft/v0
 deps:
   meta-knowledge-base: "https://github.com/danielnaab/meta-knowledge-base.git#main"
   living-specifications: "https://github.com/danielnaab/living-specifications.git#main"
+
+commands:
+  plan:
+    run: "cat"
+    description: "Render planning prompt with project state"
+    stdin:
+      template: templates/plan.md
+    context:
+      - changes
+      - slices
+
+  iterate:
+    run: "bash scripts/iterate.sh"
+    description: "Generate implementation prompt for next step of a slice"
+    args:
+      - name: slice
+        type: choice
+        description: "Slice to iterate on"
+        required: true
+        positional: true
+        options_from: slices
+
+  implement:
+    run: "bash scripts/iterate.sh {slice} | claude -p --dangerously-skip-permissions"
+    description: "Implement next slice step with Claude Code"
+    args:
+      - name: slice
+        type: choice
+        description: "Slice to implement"
+        required: true
+        positional: true
+        options_from: slices
+
+state:
+  slices:
+    run: "bash scripts/list-slices.sh"
+    cache:
+      deterministic: false
+    timeout: 10
+
+  changes:
+    run: "bash -c 'commits=$(git log --oneline -10); diff=$(git diff --stat); jq -n --arg commits \"$commits\" --arg diff \"$diff\" \"{commits: \\$commits, diff: \\$diff}\"'"
+    cache:
+      deterministic: false
+    timeout: 30
