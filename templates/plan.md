@@ -29,9 +29,9 @@
 
 ## Plan Format
 
-Structure your plan as a story with vertical slices. Each slice is an independently verifiable increment that leaves the codebase passing — this limits blast radius when something goes wrong.
+The story is a vertical slice — a thin, end-to-end increment of capability. Steps are the implementation sequence to deliver it. Each step leaves the codebase passing so that blast radius is limited when something goes wrong.
 
-If the task is a single-file change, output one slice. Do not over-decompose.
+If the task is a single-file change, output one step. Do not over-decompose.
 
 ### Story
 
@@ -45,12 +45,12 @@ One paragraph: the architectural strategy. Which existing patterns to extend, wh
 
 Bulleted end-to-end conditions that describe how the feature behaves, not just how to verify it compiles. Include edge cases and failure modes.
 
-### Slices
+### Steps
 
 Ordered list. For each:
 
 - **Delivers** -- what user-facing capability this adds
-- **Done when** -- observable behavior that confirms this slice works
+- **Done when** -- observable behavior that confirms this step works
 - **Files** -- specific files to modify or create
 
-Include spec and doc changes in the same slice as the code they describe.
+Include spec and doc changes in the same step as the code they describe.
