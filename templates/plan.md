@@ -43,14 +43,14 @@ One paragraph: the architectural strategy. Which existing patterns to extend, wh
 
 ### Acceptance Criteria
 
-Bulleted end-to-end conditions. Use concrete verification commands from AGENTS.md where possible. Include edge cases.
+Bulleted end-to-end conditions that describe how the feature behaves, not just how to verify it compiles. Include edge cases and failure modes.
 
 ### Slices
 
 Ordered list. For each:
 
 - **Delivers** -- what user-facing capability this adds
-- **Done when** -- verifiable criteria referencing specific tests or commands
+- **Done when** -- observable behavior that confirms this slice works
 - **Files** -- specific files to modify or create
 
 Include spec and doc changes in the same slice as the code they describe.
