@@ -1,6 +1,3 @@
-Read AGENTS.md for project conventions, verification commands, and write boundaries.
-Explore the codebase to understand relevant files and existing patterns before planning.
-
 {% if args is defined %}
 ## Task
 
@@ -32,22 +29,28 @@ Explore the codebase to understand relevant files and existing patterns before p
 
 ## Plan Format
 
-Plan the task given to you. Structure your plan as a story with vertical slices.
+Structure your plan as a story with vertical slices. Each slice is an independently verifiable increment that leaves the codebase passing — this limits blast radius when something goes wrong.
+
+If the task is a single-file change, output one slice. Do not over-decompose.
 
 ### Story
 
 One sentence: what capability this delivers and why.
 
+### Approach
+
+One paragraph: the architectural strategy. Which existing patterns to extend, what the integration points are, what the dependency order is between changes.
+
 ### Acceptance Criteria
 
-Bulleted list of end-to-end conditions that must be true when all slices are complete.
+Bulleted end-to-end conditions. Use concrete verification commands from AGENTS.md where possible. Include edge cases.
 
 ### Slices
 
-Ordered list of independently-testable increments. For each:
+Ordered list. For each:
 
 - **Delivers** -- what user-facing capability this adds
-- **Done when** -- concrete acceptance criteria for this slice alone
+- **Done when** -- verifiable criteria referencing specific tests or commands
 - **Files** -- specific files to modify or create
 
-Each slice should leave the codebase in a passing state. Include spec and doc changes in the same slice as the code they describe.
+Include spec and doc changes in the same slice as the code they describe.
