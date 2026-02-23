@@ -25,7 +25,7 @@ commands:
         options_from: slices
 
   implement:
-    run: "bash scripts/iterate.sh {slice} | claude -p --dangerously-skip-permissions"
+    run: "bash scripts/implement.sh {slice}"
     description: "Implement next slice step with Claude Code"
     args:
       - name: slice
@@ -34,6 +34,21 @@ commands:
         required: true
         positional: true
         options_from: slices
+
+  resume:
+    run: "bash scripts/resume.sh {slice}"
+    description: "Resume the last implement session for a slice"
+    args:
+      - name: slice
+        type: choice
+        description: "Slice to resume"
+        required: true
+        positional: true
+        options_from: slices
+
+  verify:
+    run: "bash scripts/verify.sh"
+    description: "Run consumer project verification (format, lint, tests)"
 
 state:
   slices:
@@ -47,3 +62,9 @@ state:
     cache:
       deterministic: false
     timeout: 30
+
+  verify:
+    run: "bash scripts/verify.sh"
+    cache:
+      deterministic: false
+    timeout: 180

@@ -11,6 +11,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/lib.sh"
 
 # No args: list available slices
 if [ $# -eq 0 ]; then
@@ -30,17 +31,7 @@ if [ $# -eq 0 ]; then
   exit 1
 fi
 
-SLICE_DIR="$1"
-
-# Strip trailing slash
-SLICE_DIR="${SLICE_DIR%/}"
-
-# Accept bare slug: prepend slices/ if not already a path
-case "$SLICE_DIR" in
-  slices/*) ;;
-  *) SLICE_DIR="slices/$SLICE_DIR" ;;
-esac
-
+normalize_slice_dir "$1"
 PLAN_FILE="$SLICE_DIR/plan.md"
 
 if [ ! -f "$PLAN_FILE" ]; then
@@ -53,6 +44,15 @@ slice_json=$("$SCRIPT_DIR/read-slice.sh" "$SLICE_DIR")
 
 status=$(echo "$slice_json" | jq -r '.status')
 slug=$(echo "$slice_json" | jq -r '.slug')
+
+# Detect consumer project verification
+FACTORY_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+CONSUMER_ROOT="$(cd "$FACTORY_ROOT/../.." && pwd)"
+CONSUMER_VERIFY=""
+if [ -f "$CONSUMER_ROOT/scripts/verify.sh" ]; then
+  CONSUMER_VERIFY="$CONSUMER_ROOT/scripts/verify.sh"
+fi
+
 steps_total=$(echo "$slice_json" | jq -r '.steps_total')
 steps_done=$(echo "$slice_json" | jq -r '.steps_done')
 next_step_number=$(echo "$slice_json" | jq -r '.next_step_number')
@@ -105,6 +105,11 @@ $next_step
 
 Implement this step. When done:
 
-1. Verify the changes work (run the project's test/lint/format checks)
+1. Verify the changes work:
+$(if [ -n "$CONSUMER_VERIFY" ]; then
+  echo "   Run \`bash $CONSUMER_VERIFY\` from \`$CONSUMER_ROOT\`"
+else
+  echo "   Run the project's test/lint/format checks"
+fi)
 2. Check off the step in \`$PLAN_FILE\` by changing \`- [ ]\` to \`- [x]\`
 EOF

@@ -1,5 +1,5 @@
 ---
-status: draft
+status: done
 created: 2026-02-22
 ---
 
@@ -25,17 +25,17 @@ Session files live in the consumer's slice directory (e.g. `slices/my-feature/.s
 
 ## Steps
 
-- [ ] **Create `scripts/implement.sh` wrapper**
+- [x] **Create `scripts/implement.sh` wrapper**
   - **Delivers** — implement command captures session IDs while preserving user-visible output
   - **Done when** — running `bash scripts/implement.sh <slug>` pipes iterate output to claude with `--output-format json`, extracts and saves `session_id` to `slices/<slug>/.session`, prints the text result to stdout; errors from claude are surfaced to stderr
   - **Files** — `scripts/implement.sh`
 
-- [ ] **Create `scripts/resume.sh`**
+- [x] **Create `scripts/resume.sh`**
   - **Delivers** — users can resume an interrupted Claude Code session for any slice
   - **Done when** — `bash scripts/resume.sh <slug>` reads `slices/<slug>/.session`, launches `claude --resume <id> --dangerously-skip-permissions`; missing `.session` file produces a clear error message; accepts optional extra args passed through to claude
   - **Files** — `scripts/resume.sh`
 
-- [ ] **Wire commands in `graft.yaml` and gitignore `.session` files**
+- [x] **Wire commands in `graft.yaml` and gitignore `.session` files**
   - **Delivers** — `graft run implement` and `graft run resume` work end-to-end
   - **Done when** — `implement` command uses `scripts/implement.sh` instead of inline pipeline; `resume` command added with `slice` arg using `options_from: slices`; `slices/**/.session` added to `.gitignore`
   - **Files** — `graft.yaml`, `.gitignore`
