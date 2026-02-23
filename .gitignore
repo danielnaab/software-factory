@@ -1,1 +1,1 @@
-slices/**/.session
+# run-state is machine-local; covered by top-level .graft gitignore in consumer repos

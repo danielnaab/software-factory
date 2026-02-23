@@ -5,8 +5,11 @@
 #        bash scripts/implement.sh slices/<slug>
 #
 # Pre-generates a session ID so Claude streams text output in real-time
-# (no buffering). Saves the session ID to slices/<slug>/.session for
-# later resumption with resume.sh.
+# (no buffering). Saves the session ID to $GRAFT_STATE_DIR/session.json
+# for later resumption with resume.sh.
+#
+# GRAFT_STATE_DIR is injected by graft into every command's environment,
+# pointing to the consumer repo's .graft/run-state/ directory.
 
 set -euo pipefail
 
@@ -19,11 +22,13 @@ if [ $# -eq 0 ]; then
 fi
 
 normalize_slice_dir "$1"
-SESSION_FILE="$SLICE_DIR/.session"
 
 # Pre-generate session ID so we can use streaming text output
 session_id=$(uuidgen)
-echo "$session_id" > "$SESSION_FILE"
+
+# Write session ID to graft run-state store (GRAFT_STATE_DIR injected by graft)
+mkdir -p "$GRAFT_STATE_DIR"
+printf '{"id": "%s", "slice": "%s"}\n' "$session_id" "$SLUG" > "$GRAFT_STATE_DIR/session.json"
 
 # Run iterate to build the prompt, pipe to claude with streaming text output
 "$SCRIPT_DIR/iterate.sh" "$SLUG" | claude -p --session-id "$session_id" --dangerously-skip-permissions

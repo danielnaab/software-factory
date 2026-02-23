@@ -27,6 +27,8 @@ commands:
   implement:
     run: "bash scripts/implement.sh {slice}"
     description: "Implement next slice step with Claude Code"
+    writes:
+      - session
     args:
       - name: slice
         type: choice
@@ -38,6 +40,8 @@ commands:
   resume:
     run: "bash scripts/resume.sh {slice}"
     description: "Resume the last implement session for a slice"
+    reads:
+      - session
     args:
       - name: slice
         type: choice
