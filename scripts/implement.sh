@@ -24,7 +24,7 @@ fi
 normalize_slice_dir "$1"
 
 # Pre-generate session ID so we can use streaming text output
-session_id=$(uuidgen)
+session_id=$(cat /proc/sys/kernel/random/uuid 2>/dev/null || python3 -c 'import uuid; print(uuid.uuid4())')
 
 # Write session ID to graft run-state store (GRAFT_STATE_DIR injected by graft)
 mkdir -p "$GRAFT_STATE_DIR"
