@@ -42,9 +42,10 @@ if [ -z "$session_id" ] || [ "$session_id" = "null" ]; then
   exit 1
 fi
 
-# Build resume prompt: context snapshot + failure summary (both optional)
+# Build resume prompt: context snapshot + failure summary + diagnosis (all optional)
 VERIFY_JSON="$GRAFT_STATE_DIR/verify.json"
 SNAPSHOT_JSON="$GRAFT_STATE_DIR/context-snapshot.json"
+DIAGNOSE_JSON="$GRAFT_STATE_DIR/diagnose.json"
 resume_prompt=""
 
 # Inject context snapshot summary if present and non-empty
@@ -75,6 +76,38 @@ if [ -f "$VERIFY_JSON" ]; then
   ' "$VERIFY_JSON" 2>/dev/null || echo "0")
 
   if [ "$has_failures" -gt 0 ]; then
+    # If diagnose.json exists and verify still has failures, inject structured
+    # diagnosis instead of (or in addition to) the raw failure dump
+    diagnosis_injected=false
+    if [ -f "$DIAGNOSE_JSON" ]; then
+      root_cause=$(jq -r '.root_cause // ""' "$DIAGNOSE_JSON" 2>/dev/null || echo "")
+      affected_files=$(jq -r '.affected_files | join(", ")' "$DIAGNOSE_JSON" 2>/dev/null || echo "")
+      suggested_approach=$(jq -r '.suggested_approach // ""' "$DIAGNOSE_JSON" 2>/dev/null || echo "")
+      specific_fixes=$(jq -r '
+        .specific_fixes // [] |
+        map("- " + .file + ": " + .issue + " → " + .fix) |
+        join("\n")
+      ' "$DIAGNOSE_JSON" 2>/dev/null || echo "")
+
+      if [ -n "$root_cause" ]; then
+        diagnosis_text="## Diagnosis from automated analysis
+
+Root cause: $root_cause
+
+Affected files: $affected_files
+
+Approach: $suggested_approach
+
+Specific issues:
+$specific_fixes
+
+"
+        resume_prompt="${resume_prompt}${diagnosis_text}"
+        diagnosis_injected=true
+      fi
+    fi
+
+    # Append raw failure text (after diagnosis if present, or standalone)
     failure_text=$(jq -r '
       "Verify failed. Please fix the following issues:\n\n" +
       (to_entries |

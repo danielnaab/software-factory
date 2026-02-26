@@ -75,12 +75,66 @@ commands:
     writes:
       - checkpoint
 
+  review:
+    run: "bash scripts/review.sh"
+    description: "Adversarial self-review of implementation diff against acceptance criteria (advisory)"
+    reads:
+      - session
+    writes:
+      - review
+
+  diagnose:
+    run: "bash scripts/diagnose.sh"
+    description: "Targeted root-cause analysis for verify failures"
+    reads:
+      - verify
+      - session
+    writes:
+      - diagnose
+
+  spec-check:
+    run: "bash scripts/spec-check.sh"
+    description: "Map acceptance criteria to implementation evidence in the diff"
+    reads:
+      - session
+    writes:
+      - spec-check
+
+  new-slice:
+    run: "bash scripts/new-slice.sh {description}"
+    description: "Draft a new slice plan from a feature description"
+    args:
+      - name: description
+        type: string
+        description: "Feature description for the new slice"
+        required: true
+        positional: true
+
 sequences:
   implement-verified:
     description: "Implement next slice step and verify, retrying on verify failure"
     steps:
       - implement
       - verify
+    on_step_fail:
+      step: verify
+      recovery: resume
+      max: 3
+    checkpoint: true
+    args:
+      - name: slice
+        type: choice
+        description: "Slice to implement"
+        required: true
+        positional: true
+        options_from: slices
+
+  implement-reviewed:
+    description: "Implement, verify (with retry), and self-review before human checkpoint"
+    steps:
+      - implement
+      - verify
+      - review
     on_step_fail:
       step: verify
       recovery: resume
