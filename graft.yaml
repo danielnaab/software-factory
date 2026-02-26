@@ -29,6 +29,7 @@ commands:
     description: "Implement next slice step with Claude Code"
     writes:
       - session
+      - context-snapshot
     args:
       - name: slice
         type: choice
@@ -42,6 +43,8 @@ commands:
     description: "Resume the last implement session for a slice"
     reads:
       - session
+    writes:
+      - context-snapshot
     args:
       - name: slice
         type: choice

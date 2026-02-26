@@ -23,12 +23,23 @@ fi
 
 normalize_slice_dir "$1"
 
+# Record baseline SHA before launching Claude (reliable — not written by Claude)
+baseline_sha=$(git rev-parse HEAD 2>/dev/null || echo "")
+
 # Pre-generate session ID so we can use streaming text output
 session_id=$(cat /proc/sys/kernel/random/uuid 2>/dev/null || python3 -c 'import uuid; print(uuid.uuid4())')
 
-# Write session ID to graft run-state store (GRAFT_STATE_DIR injected by graft)
+# Write session ID + baseline SHA to graft run-state store
 mkdir -p "$GRAFT_STATE_DIR"
-printf '{"id": "%s", "slice": "%s"}\n' "$session_id" "$SLUG" > "$GRAFT_STATE_DIR/session.json"
+printf '{"id": "%s", "slice": "%s", "baseline_sha": "%s"}\n' \
+  "$session_id" "$SLUG" "$baseline_sha" > "$GRAFT_STATE_DIR/session.json"
 
-# Run iterate to build the prompt, pipe to claude with streaming text output
-"$SCRIPT_DIR/iterate.sh" "$SLUG" | claude -p --session-id "$session_id" --dangerously-skip-permissions
+# Snapshot suffix: ask Claude to write a context snapshot as its final action (best-effort)
+snapshot_suffix="
+---
+When you have completed your work for this session, write a JSON file to \$GRAFT_STATE_DIR/context-snapshot.json (where \$GRAFT_STATE_DIR is the value of the GRAFT_STATE_DIR environment variable) with exactly these fields: completed_work (string: what you did), current_state (string: state of the codebase now), next_steps (string: what remains to be done), known_issues (string: problems noticed but not fixed, or empty string). Do not include baseline_sha. Example: {\"completed_work\": \"...\", \"current_state\": \"...\", \"next_steps\": \"...\", \"known_issues\": \"\"}
+---"
+
+# Run iterate to build the prompt, append snapshot suffix, pipe to claude
+{ "$SCRIPT_DIR/iterate.sh" "$SLUG"; printf '%s\n' "$snapshot_suffix"; } \
+  | claude -p --session-id "$session_id" --dangerously-skip-permissions
