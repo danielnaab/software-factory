@@ -42,11 +42,29 @@ if [ -z "$session_id" ] || [ "$session_id" = "null" ]; then
   exit 1
 fi
 
-# Build resume prompt: context snapshot + failure summary + diagnosis (all optional)
+# Build resume prompt: context snapshot + rejection feedback + failure summary + diagnosis (all optional)
 VERIFY_JSON="$GRAFT_STATE_DIR/verify.json"
 SNAPSHOT_JSON="$GRAFT_STATE_DIR/context-snapshot.json"
 DIAGNOSE_JSON="$GRAFT_STATE_DIR/diagnose.json"
+CHECKPOINT_JSON="$GRAFT_STATE_DIR/checkpoint.json"
 resume_prompt=""
+
+# Inject rejection feedback first (highest priority context)
+if [ -f "$CHECKPOINT_JSON" ]; then
+  cp_phase=$(jq -r '.phase // empty' "$CHECKPOINT_JSON" 2>/dev/null || true)
+  cp_feedback=$(jq -r '.feedback // empty' "$CHECKPOINT_JSON" 2>/dev/null || true)
+  if [ "$cp_phase" = "rejected" ] && [ -n "$cp_feedback" ]; then
+    resume_prompt="## Human feedback on rejected checkpoint
+
+The human rejected the previous implementation with this feedback:
+
+$cp_feedback
+
+Please address this feedback in your next changes.
+
+"
+  fi
+fi
 
 # Inject context snapshot summary if present and non-empty
 if [ -f "$SNAPSHOT_JSON" ]; then
@@ -64,6 +82,26 @@ Next steps: $next
 Known issues: $issues
 
 "
+  fi
+fi
+
+# Inject rejection feedback from checkpoint.json if present
+if [ -f "$CHECKPOINT_JSON" ]; then
+  checkpoint_phase=$(jq -r '.phase // empty' "$CHECKPOINT_JSON" 2>/dev/null || true)
+  if [ "$checkpoint_phase" = "rejected" ]; then
+    checkpoint_feedback=$(jq -r '.feedback // empty' "$CHECKPOINT_JSON" 2>/dev/null || true)
+    if [ -n "$checkpoint_feedback" ]; then
+      feedback_text="## Human feedback on rejection
+
+The human rejected the previous implementation with this feedback:
+
+$checkpoint_feedback
+
+Please address this feedback in your next changes.
+
+"
+      resume_prompt="${resume_prompt}${feedback_text}"
+    fi
   fi
 fi
 

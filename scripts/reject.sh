@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Reject command: reject a pending checkpoint for the current consumer repo.
 #
-# Usage: bash scripts/reject.sh
+# Usage: bash scripts/reject.sh [feedback]
 #
 # Reads checkpoint.json from $GRAFT_STATE_DIR. If the checkpoint is in
-# "awaiting-review" phase, atomically writes {phase: "rejected"} and exits 0.
+# "awaiting-review" phase, atomically writes {phase: "rejected"} (and optionally
+# {feedback: "..."} when feedback text is provided) and exits 0.
 # Exits 1 with an error message if no pending checkpoint exists.
 #
 # GRAFT_STATE_DIR is injected by graft. Graft enforces reads: [checkpoint]
@@ -27,9 +28,19 @@ if [ "$phase" != "awaiting-review" ]; then
   exit 1
 fi
 
+# Optional feedback argument. Strip the literal "{feedback}" sentinel that graft
+# emits when the {feedback} placeholder is left unsubstituted (no arg provided).
+FEEDBACK="${1:-}"
+[ "$FEEDBACK" = '{feedback}' ] && FEEDBACK=""
+
 # Atomic write: write to .tmp then rename
 TMP_FILE="${CHECKPOINT_JSON}.tmp"
-jq '.phase = "rejected"' "$CHECKPOINT_JSON" > "$TMP_FILE"
+if [ -n "$FEEDBACK" ]; then
+  jq --arg fb "$FEEDBACK" 'del(.feedback) | . + {phase: "rejected", feedback: $fb}' \
+    "$CHECKPOINT_JSON" > "$TMP_FILE"
+  echo "Checkpoint rejected with feedback."
+else
+  jq 'del(.feedback) | .phase = "rejected"' "$CHECKPOINT_JSON" > "$TMP_FILE"
+  echo "Checkpoint rejected."
+fi
 mv "$TMP_FILE" "$CHECKPOINT_JSON"
-
-echo "Checkpoint rejected."

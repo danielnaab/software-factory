@@ -80,14 +80,20 @@ commands:
       - checkpoint
 
   reject:
-    run: "bash scripts/reject.sh"
+    run: "bash scripts/reject.sh {feedback}"
     description: "Reject a pending checkpoint"
     category: core
-    example: "graft run software-factory:reject"
+    example: "graft run software-factory:reject \"The output is missing error handling\""
     reads:
       - checkpoint
     writes:
       - checkpoint
+    args:
+      - name: feedback
+        type: string
+        description: "Optional feedback for Claude on why the checkpoint was rejected"
+        required: false
+        positional: true
 
   review:
     run: "bash scripts/review.sh"
