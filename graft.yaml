@@ -110,6 +110,31 @@ commands:
         required: true
         positional: true
 
+  implement-parallel:
+    run: "bash scripts/implement-parallel.sh {slice1} {slice2} {slice3} {slice4}"
+    description: "Run multiple independent slices in parallel using git worktrees"
+    args:
+      - name: slice1
+        type: string
+        description: "First slice to implement"
+        required: true
+        positional: true
+      - name: slice2
+        type: string
+        description: "Second slice to implement"
+        required: true
+        positional: true
+      - name: slice3
+        type: string
+        description: "Third slice to implement (optional)"
+        required: false
+        positional: true
+      - name: slice4
+        type: string
+        description: "Fourth slice to implement (optional)"
+        required: false
+        positional: true
+
 sequences:
   implement-verified:
     description: "Implement next slice step and verify, retrying on verify failure"
