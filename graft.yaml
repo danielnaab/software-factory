@@ -53,6 +53,43 @@ commands:
   verify:
     run: "bash scripts/verify.sh"
     description: "Run consumer project verification (format, lint, tests)"
+    writes:
+      - verify
+
+  approve:
+    run: "bash scripts/approve.sh"
+    description: "Approve a pending checkpoint"
+    reads:
+      - checkpoint
+    writes:
+      - checkpoint
+
+  reject:
+    run: "bash scripts/reject.sh"
+    description: "Reject a pending checkpoint"
+    reads:
+      - checkpoint
+    writes:
+      - checkpoint
+
+sequences:
+  implement-verified:
+    description: "Implement next slice step and verify, retrying on verify failure"
+    steps:
+      - implement
+      - verify
+    on_step_fail:
+      step: verify
+      recovery: resume
+      max: 3
+    checkpoint: true
+    args:
+      - name: slice
+        type: choice
+        description: "Slice to implement"
+        required: true
+        positional: true
+        options_from: slices
 
 state:
   slices:

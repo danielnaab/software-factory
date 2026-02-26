@@ -1,1 +1,4 @@
 # run-state is machine-local; covered by top-level .graft gitignore in consumer repos
+
+# Session ID files written by implement.sh to track Claude sessions (machine-local)
+.session
