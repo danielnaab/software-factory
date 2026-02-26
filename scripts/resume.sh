@@ -49,23 +49,6 @@ DIAGNOSE_JSON="$GRAFT_STATE_DIR/diagnose.json"
 CHECKPOINT_JSON="$GRAFT_STATE_DIR/checkpoint.json"
 resume_prompt=""
 
-# Inject rejection feedback first (highest priority context)
-if [ -f "$CHECKPOINT_JSON" ]; then
-  cp_phase=$(jq -r '.phase // empty' "$CHECKPOINT_JSON" 2>/dev/null || true)
-  cp_feedback=$(jq -r '.feedback // empty' "$CHECKPOINT_JSON" 2>/dev/null || true)
-  if [ "$cp_phase" = "rejected" ] && [ -n "$cp_feedback" ]; then
-    resume_prompt="## Human feedback on rejected checkpoint
-
-The human rejected the previous implementation with this feedback:
-
-$cp_feedback
-
-Please address this feedback in your next changes.
-
-"
-  fi
-fi
-
 # Inject context snapshot summary if present and non-empty
 if [ -f "$SNAPSHOT_JSON" ]; then
   completed=$(jq -r '.completed_work // ""' "$SNAPSHOT_JSON" 2>/dev/null || echo "")

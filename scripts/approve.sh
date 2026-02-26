@@ -28,8 +28,9 @@ if [ "$phase" != "awaiting-review" ]; then
 fi
 
 # Atomic write: write to .tmp then rename
+# del(.feedback) mirrors reject.sh — clears any residual feedback field.
 TMP_FILE="${CHECKPOINT_JSON}.tmp"
-jq '.phase = "approved"' "$CHECKPOINT_JSON" > "$TMP_FILE"
+jq 'del(.feedback) | .phase = "approved"' "$CHECKPOINT_JSON" > "$TMP_FILE"
 mv "$TMP_FILE" "$CHECKPOINT_JSON"
 
 echo "Checkpoint approved."
