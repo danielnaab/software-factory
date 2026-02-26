@@ -7,6 +7,8 @@ commands:
   plan:
     run: "cat"
     description: "Render planning prompt with project state"
+    category: core
+    example: "graft run software-factory:plan"
     stdin:
       template: templates/plan.md
     context:
@@ -16,6 +18,8 @@ commands:
   iterate:
     run: "bash scripts/iterate.sh"
     description: "Generate implementation prompt for next step of a slice"
+    category: core
+    example: "graft run software-factory:iterate slices/my-feature"
     args:
       - name: slice
         type: choice
@@ -27,6 +31,8 @@ commands:
   implement:
     run: "bash scripts/implement.sh {slice}"
     description: "Implement next slice step with Claude Code"
+    category: core
+    example: "graft run software-factory:implement slices/my-feature"
     writes:
       - session
       - context-snapshot
@@ -41,6 +47,8 @@ commands:
   resume:
     run: "bash scripts/resume.sh {slice}"
     description: "Resume the last implement session for a slice"
+    category: diagnostic
+    example: "graft run software-factory:resume slices/my-feature"
     reads:
       - session
     writes:
@@ -56,12 +64,16 @@ commands:
   verify:
     run: "bash scripts/verify.sh"
     description: "Run consumer project verification (format, lint, tests)"
+    category: core
+    example: "graft run software-factory:verify"
     writes:
       - verify
 
   approve:
     run: "bash scripts/approve.sh"
     description: "Approve a pending checkpoint"
+    category: core
+    example: "graft run software-factory:approve"
     reads:
       - checkpoint
     writes:
@@ -70,6 +82,8 @@ commands:
   reject:
     run: "bash scripts/reject.sh"
     description: "Reject a pending checkpoint"
+    category: core
+    example: "graft run software-factory:reject"
     reads:
       - checkpoint
     writes:
@@ -78,6 +92,8 @@ commands:
   review:
     run: "bash scripts/review.sh"
     description: "Adversarial self-review of implementation diff against acceptance criteria (advisory)"
+    category: optional
+    example: "graft run software-factory:review"
     reads:
       - session
     writes:
@@ -86,6 +102,8 @@ commands:
   diagnose:
     run: "bash scripts/diagnose.sh"
     description: "Targeted root-cause analysis for verify failures"
+    category: diagnostic
+    example: "graft run software-factory:diagnose"
     reads:
       - verify
       - session
@@ -95,6 +113,8 @@ commands:
   spec-check:
     run: "bash scripts/spec-check.sh"
     description: "Map acceptance criteria to implementation evidence in the diff"
+    category: optional
+    example: "graft run software-factory:spec-check"
     reads:
       - session
     writes:
@@ -103,6 +123,8 @@ commands:
   new-slice:
     run: "bash scripts/new-slice.sh {description}"
     description: "Draft a new slice plan from a feature description"
+    category: optional
+    example: "graft run software-factory:new-slice \"add retry logic to sequences\""
     args:
       - name: description
         type: string
@@ -113,6 +135,8 @@ commands:
   implement-parallel:
     run: "bash scripts/implement-parallel.sh {slice1} {slice2} {slice3} {slice4}"
     description: "Run multiple independent slices in parallel using git worktrees"
+    category: advanced
+    example: "graft run software-factory:implement-parallel slices/feature-a slices/feature-b"
     args:
       - name: slice1
         type: string
@@ -138,6 +162,8 @@ commands:
 sequences:
   implement-verified:
     description: "Implement next slice step and verify, retrying on verify failure"
+    category: core
+    example: "graft run software-factory:implement-verified slices/my-feature"
     steps:
       - implement
       - verify
@@ -156,6 +182,8 @@ sequences:
 
   implement-reviewed:
     description: "Implement, verify (with retry), and self-review before human checkpoint"
+    category: core
+    example: "graft run software-factory:implement-reviewed slices/my-feature"
     steps:
       - implement
       - verify
