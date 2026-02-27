@@ -20,6 +20,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"
 
+REPO_ROOT="$(pwd)"
+
 if [ $# -lt 2 ]; then
   echo "Usage: bash scripts/implement-parallel.sh <slice1> <slice2> [<slice3> [<slice4>]]" >&2
   echo "Accepts 2 to 4 slice arguments." >&2
@@ -87,7 +89,7 @@ for i in "${!slugs[@]}"; do
   slug="${slugs[$i]}"
   slice_dir="${slices[$i]}"
   worktree_path=".worktrees/$slug"
-  log_file=".worktrees/$slug.log"
+  log_file="$REPO_ROOT/.worktrees/$slug.log"
 
   (
     cd "$worktree_path"
@@ -95,7 +97,7 @@ for i in "${!slugs[@]}"; do
       > "$log_file" 2>&1
   ) &
   pids+=("$!")
-  log_files+=("$log_file")
+  log_files+=(".worktrees/$slug.log")
   echo "  [$!] $slice_dir → $worktree_path"
 done
 

@@ -28,10 +28,7 @@ if [ "$phase" != "awaiting-review" ]; then
   exit 1
 fi
 
-# Optional feedback argument. Strip the literal "{feedback}" sentinel that graft
-# emits when the {feedback} placeholder is left unsubstituted (no arg provided).
 FEEDBACK="${1:-}"
-[ "$FEEDBACK" = '{feedback}' ] && FEEDBACK=""
 
 # Atomic write: write to .tmp then rename
 TMP_FILE="${CHECKPOINT_JSON}.tmp"

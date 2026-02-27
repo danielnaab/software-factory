@@ -17,7 +17,7 @@ commands:
       - verify
 
   iterate:
-    run: "bash scripts/iterate.sh"
+    run: "bash scripts/iterate.sh {slice}"
     description: "Generate implementation prompt for next step of a slice"
     category: core
     example: "graft run software-factory:iterate slices/my-feature"
@@ -52,8 +52,6 @@ commands:
     example: "graft run software-factory:resume slices/my-feature"
     reads:
       - session
-    writes:
-      - context-snapshot
     args:
       - name: slice
         type: choice
@@ -77,17 +75,13 @@ commands:
     example: "graft run software-factory:approve"
     reads:
       - checkpoint
-    writes:
-      - checkpoint
 
   reject:
-    run: "bash scripts/reject.sh {feedback}"
+    run: "bash scripts/reject.sh"
     description: "Reject a pending checkpoint"
     category: core
     example: "graft run software-factory:reject \"The output is missing error handling\""
     reads:
-      - checkpoint
-    writes:
       - checkpoint
     args:
       - name: feedback
@@ -140,7 +134,7 @@ commands:
         positional: true
 
   implement-parallel:
-    run: "bash scripts/implement-parallel.sh {slice1} {slice2} {slice3} {slice4}"
+    run: "bash scripts/implement-parallel.sh"
     description: "Run multiple independent slices in parallel using git worktrees"
     category: advanced
     example: "graft run software-factory:implement-parallel slices/feature-a slices/feature-b"
