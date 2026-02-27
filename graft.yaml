@@ -14,6 +14,7 @@ commands:
     context:
       - changes
       - slices
+      - verify
 
   iterate:
     run: "bash scripts/iterate.sh"
