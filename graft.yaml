@@ -205,18 +205,20 @@ sequences:
 state:
   slices:
     run: "bash scripts/list-slices.sh"
-    cache:
-      deterministic: false
     timeout: 10
 
   changes:
     run: "bash -c 'commits=$(git log --oneline -10); diff=$(git diff --stat); jq -n --arg commits \"$commits\" --arg diff \"$diff\" \"{commits: \\$commits, diff: \\$diff}\"'"
-    cache:
-      deterministic: false
     timeout: 30
 
   verify:
     run: "bash scripts/verify.sh"
     cache:
-      deterministic: false
+      inputs:
+        - "**/*.rs"
+        - "Cargo.toml"
+        - "Cargo.lock"
+        - "**/*.py"
+        - "pyproject.toml"
+        - "uv.lock"
     timeout: 180
