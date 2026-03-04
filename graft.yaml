@@ -16,27 +16,32 @@ commands:
       - slices
       - verify
 
-  iterate:
-    run: "bash scripts/iterate.sh {slice}"
-    description: "Generate implementation prompt for next step of a slice"
-    category: core
-    example: "graft run software-factory:iterate slices/my-feature"
-    args:
-      - name: slice
-        type: choice
-        description: "Slice to iterate on"
-        required: true
-        positional: true
-        options_from: slices
-
   implement:
-    run: "bash scripts/implement.sh {slice}"
+    run: "bash scripts/implement-session.sh {slice}"
     description: "Implement next slice step with Claude Code"
     category: core
     example: "graft run software-factory:implement slices/my-feature"
     writes:
       - session
       - context-snapshot
+    stdin: |
+      You are implementing a software slice in a spec-driven workflow.
+
+      ## Your Task
+      1. Read the slice plan at slices/$GRAFT_SLICE/plan.md
+         ($GRAFT_SLICE env var has the slug)
+      2. Find the next unchecked step (marked `- [ ]`)
+      3. Read the step's "Done when" criteria carefully
+      4. Implement exactly what the step requires — no more, no less
+      5. Run verification: if scripts/verify.sh exists, run it
+      6. If verification passes, mark the step done: `- [ ]` → `- [x]`
+      7. Write a context snapshot to $GRAFT_STATE_DIR/context-snapshot.json:
+         {"completed_work":"...","current_state":"...","next_steps":"...","known_issues":""}
+
+      ## Rules
+      - Work on ONE step at a time
+      - If all steps are `[x]`, report the slice is complete
+      - Read CLAUDE.md and AGENTS.md for project conventions
     args:
       - name: slice
         type: choice
@@ -46,12 +51,32 @@ commands:
         options_from: slices
 
   resume:
-    run: "bash scripts/resume.sh {slice}"
+    run: "bash scripts/resume-session.sh {slice}"
     description: "Resume the last implement session for a slice"
     category: diagnostic
     example: "graft run software-factory:resume slices/my-feature"
     reads:
       - session
+    stdin: |
+      You are resuming implementation of a software slice after a previous session.
+
+      ## Context Recovery
+      Read these files to understand what happened previously:
+      - slices/$GRAFT_SLICE/plan.md — the plan with completed and pending steps
+      - $GRAFT_STATE_DIR/session.json — session metadata and baseline SHA
+      - $GRAFT_STATE_DIR/context-snapshot.json — previous work summary (if exists)
+      - $GRAFT_STATE_DIR/checkpoint.json — if phase is "rejected", read feedback
+      - $GRAFT_STATE_DIR/diagnose.json — automated diagnosis of failures (if exists)
+      - $GRAFT_STATE_DIR/verify.json — current verification results (if exists)
+
+      ## Your Task
+      1. Understand what was done before and what went wrong (if anything)
+      2. Find the next unchecked step in the plan (marked `- [ ]`)
+      3. Implement it, addressing any previous failures or reviewer feedback
+      4. Run verification
+      5. Mark the step `[x]` if verification passes
+      6. Write context snapshot to $GRAFT_STATE_DIR/context-snapshot.json:
+         {"completed_work":"...","current_state":"...","next_steps":"...","known_issues":""}
     args:
       - name: slice
         type: choice
@@ -91,7 +116,7 @@ commands:
         positional: true
 
   review:
-    run: "bash scripts/review.sh"
+    run: "bash scripts/review-run.sh"
     description: "Adversarial self-review of implementation diff against acceptance criteria (advisory)"
     category: optional
     example: "graft run software-factory:review"
@@ -99,9 +124,13 @@ commands:
       - session
     writes:
       - review
+    context:
+      - session
+    stdin:
+      template: templates/review.md
 
   diagnose:
-    run: "bash scripts/diagnose.sh"
+    run: "bash scripts/diagnose-run.sh"
     description: "Targeted root-cause analysis for verify failures"
     category: diagnostic
     example: "graft run software-factory:diagnose"
@@ -110,9 +139,13 @@ commands:
       - session
     writes:
       - diagnose
+    context:
+      - session
+    stdin:
+      template: templates/diagnose.md
 
   spec-check:
-    run: "bash scripts/spec-check.sh"
+    run: "bash scripts/spec-check-run.sh"
     description: "Map acceptance criteria to implementation evidence in the diff"
     category: optional
     example: "graft run software-factory:spec-check"
@@ -120,13 +153,64 @@ commands:
       - session
     writes:
       - spec-check
+    context:
+      - session
+    stdin:
+      template: templates/spec-check.md
 
   new-slice:
-    run: "bash scripts/new-slice.sh {description}"
+    run: "bash scripts/new-slice-create.sh {slug} {description}"
     description: "Draft a new slice plan from a feature description"
     category: optional
-    example: "graft run software-factory:new-slice \"add retry logic to sequences\""
+    example: "graft run software-factory:new-slice my-feature \"add retry logic\""
+    stdin: |
+      You are creating a new slice plan for a spec-driven development project.
+
+      ## Input
+      - Slug: read $GRAFT_NEW_SLUG env var
+      - Description: read $GRAFT_NEW_DESC env var
+
+      ## Your Task
+      1. Read existing slices at slices/*/plan.md for context on format and style
+      2. Read CLAUDE.md and AGENTS.md for project conventions
+      3. Create the file slices/$GRAFT_NEW_SLUG/plan.md with this structure:
+
+      ---
+      status: draft
+      created: <today's date YYYY-MM-DD>
+      depends_on: []
+      ---
+
+      # <Title derived from description>
+
+      ## Story
+      <User-facing narrative of what they need and why>
+
+      ## Approach
+      <Technical strategy in 2-3 paragraphs>
+
+      ## Acceptance Criteria
+      <Bulleted list of testable outcomes>
+
+      ## Steps
+      - [ ] **Step name**
+        - **Delivers** — what value this step creates
+        - **Done when** — precise completion criteria
+        - **Files** — which files get modified
+
+      4. Create the directory slices/$GRAFT_NEW_SLUG/ if it doesn't exist
+      5. Write the plan file
+
+      ## Rules
+      - Keep steps small and independently verifiable
+      - Each step should be completable in one session
+      - Acceptance criteria must be testable
     args:
+      - name: slug
+        type: string
+        description: "Kebab-case slug for the new slice (e.g., my-feature)"
+        required: true
+        positional: true
       - name: description
         type: string
         description: "Feature description for the new slice"
