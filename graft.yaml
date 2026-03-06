@@ -65,7 +65,6 @@ commands:
       - slices/$GRAFT_SLICE/plan.md — the plan with completed and pending steps
       - $GRAFT_STATE_DIR/session.json — session metadata and baseline SHA
       - $GRAFT_STATE_DIR/context-snapshot.json — previous work summary (if exists)
-      - $GRAFT_STATE_DIR/checkpoint.json — if phase is "rejected", read feedback
       - $GRAFT_STATE_DIR/diagnose.json — automated diagnosis of failures (if exists)
       - $GRAFT_STATE_DIR/verify.json — current verification results (if exists)
 
@@ -92,28 +91,6 @@ commands:
     example: "graft run software-factory:verify"
     writes:
       - verify
-
-  approve:
-    run: "bash scripts/approve.sh"
-    description: "Approve a pending checkpoint"
-    category: core
-    example: "graft run software-factory:approve"
-    reads:
-      - checkpoint
-
-  reject:
-    run: "bash scripts/reject.sh"
-    description: "Reject a pending checkpoint"
-    category: core
-    example: "graft run software-factory:reject \"The output is missing error handling\""
-    reads:
-      - checkpoint
-    args:
-      - name: feedback
-        type: string
-        description: "Optional feedback for Claude on why the checkpoint was rejected"
-        required: false
-        positional: true
 
   review:
     run: "bash scripts/review-run.sh"
@@ -256,7 +233,6 @@ sequences:
       step: verify
       recovery: resume
       max: 3
-    checkpoint: true
     args:
       - name: slice
         type: choice
@@ -266,7 +242,7 @@ sequences:
         options_from: slices
 
   implement-reviewed:
-    description: "Implement, verify (with retry), and self-review before human checkpoint"
+    description: "Implement, verify (with retry), and self-review"
     category: core
     example: "graft run software-factory:implement-reviewed slices/my-feature"
     steps:
@@ -277,7 +253,6 @@ sequences:
       step: verify
       recovery: resume
       max: 3
-    checkpoint: true
     args:
       - name: slice
         type: choice
