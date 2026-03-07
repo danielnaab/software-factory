@@ -4,7 +4,7 @@ status: draft
 
 # Slice implementation workflow
 
-Step-by-step process for taking a slice from draft to done using grove and software-factory commands.
+Step-by-step process for taking a slice from draft to done using grove, scions, and software-factory commands.
 
 ## Prerequisites
 
@@ -13,9 +13,17 @@ Step-by-step process for taking a slice from draft to done using grove and softw
 - `graft resolve` has been run (`.graft/` dependencies are current)
 - Consumer project has `scripts/verify.sh`
 
+## Two paths: interactive and scion
+
+**Interactive** (`:run`) — synchronous, output streams to grove transcript. Good for quick commands: verify, review, plan, one-off implement.
+
+**Scion** (`:scion`) — creates an isolated worktree with a background tmux session running Claude Code. Good for sustained implementation across multiple steps. Each scion gets its own branch (`feature/<name>`), state directory, and session persistence.
+
+The scion path is the primary workflow. Interactive is for spot checks and quick tasks.
+
 ## Workflow
 
-### 1. Pick a slice
+### 1. Pick and focus a slice
 
 Open grove and review what's available:
 
@@ -24,109 +32,140 @@ grove
 :state slices
 ```
 
-Choose a draft slice whose dependencies are satisfied. Read the plan:
+Choose a draft slice whose dependencies are satisfied. Focus on it:
+
+```
+:focus slices
+```
+
+This opens a picker over all slices. Select your target. Focus is sticky — subsequent commands that take a `slice` argument will auto-fill it. You can also set focus directly:
+
+```
+:focus slices slices/<slug>
+```
+
+Read the plan to understand the story, approach, and acceptance criteria:
 
 ```
 :run software-factory:plan
 ```
 
-Or read `slices/<slug>/plan.md` directly. Understand the story, approach, and acceptance criteria before starting.
-
 ### 2. Accept the plan
 
-If the plan is ready, change the frontmatter status from `draft` to `accepted`. If the plan needs changes, edit it first -- steps should be small, independently verifiable, and completable in one session.
+No grove command for this yet — edit `slices/<slug>/plan.md` directly. Change the frontmatter status from `draft` to `accepted`. If the plan needs changes, edit it first. Steps should be small, independently verifiable, and completable in one session.
 
-### 3. Implement one step
-
-Start implementation with:
+### 3. Create a scion
 
 ```
-:run software-factory:implement <slug>
+:scion create <name>
 ```
 
-This launches a Claude session that:
-- reads the plan
+This creates a git worktree at `.worktrees/<name>/` and a branch `feature/<name>`. The scion is an isolated copy of the repo where implementation happens without affecting main.
+
+Name the scion after the slice (e.g., `:scion create grove-durable-error-messages`).
+
+### 4. Start the scion
+
+```
+:scion start <name>
+```
+
+This launches the command configured in `graft.yaml` under `scions.start` (typically `software-factory:implement`) inside a tmux session in the scion's worktree. The implement session:
+- reads the slice plan
 - finds the next unchecked step (`- [ ]`)
 - implements exactly what the step requires
 - runs verification
 - marks the step done (`- [x]`) if verification passes
 
-One step per invocation. If the step is large, break it up in the plan first.
-
-### 4. Verify
-
-Verification runs automatically at the end of implement. To run it separately:
+### 5. Attach to monitor progress
 
 ```
-:run software-factory:verify
+:attach <name>
 ```
 
-This calls `scripts/verify.sh` (format, lint, tests, smoke). All four must pass.
+This connects your terminal to the scion's tmux session so you can watch Claude Code work, intervene, or provide input. Detach with `Ctrl-b d` to return to grove.
 
-If verification fails, either fix manually or use resume:
+### 6. Monitor from grove
+
+Without attaching, check scion status:
+
+```
+:scion list
+```
+
+Shows each scion's ahead/behind counts, dirty state, session activity, and verify status.
+
+### 7. Iterate
+
+If the session completes one step and stops, start it again for the next step:
+
+```
+:scion start <name>
+```
+
+If a step failed, resume picks up with context from the previous attempt:
 
 ```
 :run software-factory:resume <slug>
 ```
 
-Resume reads the previous session context and diagnosis, then picks up where implement left off.
+Repeat until all steps in the plan are checked off.
 
-### 5. Review (optional)
+### 8. Verify and review
 
-After implementation passes verification:
+Run verification from the scion worktree or interactively:
 
 ```
+:run software-factory:verify
 :run software-factory:review
 ```
 
-Adversarial self-review of the diff against acceptance criteria. Outputs `review.json` with findings. Address any issues before proceeding.
+Review is an adversarial self-review of the diff against acceptance criteria.
 
-### 6. Repeat until all steps are done
+### 9. Fuse the scion
 
-Go back to step 3 for the next unchecked step. Each step should leave the codebase green (all verification passing).
-
-### 7. Mark the slice done
-
-When all steps are checked off and verification passes:
-- Change frontmatter status to `done`
-- Commit the final plan update
-
-### 8. Move to the next slice
-
-Check what's unblocked. Slices that depended on the one you just completed may now be ready.
-
-## Shortcut: implement-verified sequence
-
-For hands-off operation, the `implement-verified` sequence runs implement then verify, with automatic retry on verification failure (up to 3 attempts):
+When all steps pass and the slice is complete:
 
 ```
-:run software-factory:implement-verified <slug>
+:scion fuse <name>
 ```
 
-## Shortcut: implement-reviewed sequence
+This merges the scion's branch into main, runs pre/post-fuse hooks, and cleans up the worktree and branch. If verify fails during fuse hooks, fix and retry.
 
-Same as above but adds a self-review after verification passes:
+### 10. Mark the slice done and move on
+
+Edit `slices/<slug>/plan.md` — change frontmatter status to `done`. Commit.
+
+Check what's newly unblocked. Slices that depended on the completed one may now be ready.
+
+## Interactive shortcuts
+
+For quick, synchronous work without creating a scion:
 
 ```
-:run software-factory:implement-reviewed <slug>
+:run software-factory:implement <slug>          # one step, blocking
+:run software-factory:implement-verified <slug> # implement + verify, retry up to 3x
+:run software-factory:implement-reviewed <slug> # implement + verify + review
 ```
+
+When focus is set on `slices`, the `<slug>` argument auto-fills.
 
 ## Dependency order for current draft slices
 
 Independent (can start in any order):
-- `grove-smart-column-widths` -- table readability at narrow widths
-- `grove-focus-navigation` -- circular Tab, auto-scroll, Esc unfocus
-- `grove-block-visual-clarity` -- gutter markers for block boundaries
-- `grove-catalog-arg-prompt` -- pre-fill prompt for commands needing args
-- `grove-state-query-execution` -- execute state queries from TUI
+- `grove-smart-column-widths` — table readability at narrow widths
+- `grove-focus-navigation` — circular Tab, auto-scroll, Esc unfocus
+- `grove-block-visual-clarity` — gutter markers for block boundaries
+- `grove-catalog-arg-prompt` — pre-fill prompt for commands needing args
+- `grove-state-query-execution` — execute state queries from TUI
 
 Requires `grove-durable-error-messages` first:
-- `grove-dep-config-error-diagnostics` -- surface graft.yaml load failures
-- `grove-actionable-scion-errors` -- append fix hints to scion errors
+- `grove-dep-config-error-diagnostics` — surface graft.yaml load failures
+- `grove-actionable-scion-errors` — append fix hints to scion errors
 
 Suggested order:
 1. `grove-durable-error-messages` (unblocks 2 others)
-2. Any independent slices (parallel-safe)
+2. Any independent slices (parallel-safe via separate scions)
 3. `grove-dep-config-error-diagnostics`
 4. `grove-actionable-scion-errors`
 
@@ -137,6 +176,7 @@ Suggested order:
 - **Small steps over big steps.** If a step feels too large, split it in the plan first.
 - **Verify before marking done.** Never mark a step `[x]` with failing checks.
 - **Edit the plan when it's wrong.** Plans are living documents. Update them when reality diverges.
+- **Fuse early.** Don't let scions drift far from main. Fuse after each slice, not after several.
 
 ## Context
 
